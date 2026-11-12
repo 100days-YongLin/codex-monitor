@@ -54,7 +54,7 @@ In Safari, choose **Share → Add to Home Screen** for a standalone display. Kee
 
 ## Controls and task states
 
-Click **CODEX** in the top-left corner to open the controls. **清除已结束** clears finished cards in this browser; **切换全屏** requests fullscreen where supported. A connection dot is green when connected and orange when disconnected. Hover over it to read its status.
+Click **⋯** in the top-left corner to open the controls. **清除已结束** clears finished cards in this browser; **切换全屏** requests fullscreen where supported. A connection dot is green when connected and orange when disconnected. Hover over it to read its status.
 
 | Card | Meaning |
 | --- | --- |

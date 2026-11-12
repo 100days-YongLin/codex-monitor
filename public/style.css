@@ -64,8 +64,9 @@ main {
 }
 .topbar, .tasks-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 0; }
 .topbar { position: relative; z-index: 2; flex-shrink: 0; }
-.brand { font-size: clamp(15px, 1.9vw, 26px); font-weight: 750; letter-spacing: .14em; cursor: pointer; list-style: none; }
-.brand::-webkit-details-marker { display: none; }
+.menu-trigger { display: grid; place-items: center; width: 44px; height: 44px; color: #91aac7; font-size: 26px; line-height: 1; cursor: pointer; list-style: none; border-radius: 10px; }
+.menu-trigger:hover { color: #f4f8ff; background: #15345666; }
+.menu-trigger::-webkit-details-marker { display: none; }
 .menu { position: relative; }
 .menu-actions { position: absolute; left: 0; top: calc(100% + 14px); display: grid; padding: 6px; min-width: 160px; border: 1px solid #284e76; border-radius: 12px; background: #09172b; box-shadow: 0 12px 36px #0008; }
 .menu-actions button { border: none; background: transparent; color: #d4e2f5; text-align: left; padding: 12px; border-radius: 7px; cursor: pointer; font-size: 14px; }
