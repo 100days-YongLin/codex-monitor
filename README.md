@@ -1,63 +1,128 @@
-# Codex Live Monitor
+# Codex Monitor
 
-在 iPad 横屏显示大时钟和这台 Mac 上的 Codex 任务。网页采用深色蓝绿卡片，后端仅使用 Python 标准库。
+[English](README.md) · [简体中文](README.zh-CN.md)
 
-## 使用
+A local dashboard that shows your Mac's Codex tasks on an iPad: a large clock above blue running cards and green completion cards. When a task finishes, an eight-second notification brings its name and a large checkmark to the foreground.
 
-服务端口为 `8790`。在同一局域网的 iPad Safari 中打开 `http://192.168.3.51:8790/`，再选择“分享 → 添加到主屏幕”。Mac 当前的主机名地址为 `http://YonglinMacBook-Pro.local:8790/`，该地址需要局域网支持 Bonjour 解析。IP 地址可能随网络变化。
+The backend uses Python's standard library. The frontend runs without a build step, and its bundled font loads from your Mac.
 
-- 蓝色：收到开始事件，且检测到本机 Codex 仍持有该聊天的日志写入句柄。按事件中的真实开始时间计时。
-- 绿色：收到这一轮执行的完成事件，显示勾和总耗时。表示本轮结束，不表示代码通过测试。
-- 橙色：执行中断，或开始之后没有结束事件、也无法确认写入进程仍存在。
-- 红色：收到失败事件。
-- 断线：显示连接中断，卡片变暗，运行计时暂停，自动重连。
+![Completion notification using demo data](output/completion-effect.jpg)
 
-运行任务排在前面。超过屏幕宽度时横向滑动卡片。点击左上角 CODEX 打开操作菜单，可清除已结束记录或切换全屏。首次启动载入当天已有的结束记录；此后记录持久化保留。“清除已结束”只隐藏当前浏览器已结束的轮次，下一轮仍会出现。清除记录存放在浏览器本地；不同设备分别维护。
+## Features
 
-时钟与计时采用本地托管的 [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono)，字体许可位于 `public/fonts/OFL.txt`。任务标题最多显示两行，长词可以换行；数字随卡片宽高缩放。卡片区独立横向滚动，页面宽度不随任务数量增长。
+- Large clock with locally hosted JetBrains Mono numerals.
+- Running timers based on lifecycle timestamps, rather than when you opened the page.
+- Separate completed, interrupted, failed, and unconfirmed states.
+- Eight-second completion effects, with multiple completions grouped together. Existing completed tasks do not replay their effects on page load.
+- Landscape and portrait layouts, two-line task titles, responsive timers, and horizontal card scrolling.
+- Automatic reconnection, with dimmed cards and paused timers while disconnected.
+- Persistent completion records and per-browser clearing.
+- Optional macOS login startup through a user LaunchAgent.
 
-新完成的任务触发 8 秒的绿色光晕、大勾和任务名称通知。多个任务在通知期间结束时合并展示，并从最近一次完成重新计时。首次读取已有的完成记录不触发特效；失败和中断不触发绿色通知。可点击通知右上角关闭，或按 Escape 收起。
+## Requirements
 
-## 启动和停止
+- A Mac running Codex with local session logs and `~/.codex/state_5.sqlite`.
+- Python 3.10 or later. The backend has been tested with Python 3.10.7.
+- An iPad with a modern browser on the same local network as the Mac.
+- macOS `lsof` and `launchctl`, used for writer detection and background startup.
 
-双击 `启动监控.command` 或 `停止监控.command`。启动操作会安装本项目的用户级 LaunchAgent，登录 macOS 后自动启动，服务退出后自动重启。停止操作会停止服务并移除该启动项。
+Node.js is optional and used only for the JavaScript syntax check below. No Python packages or frontend dependencies need to be installed.
 
-终端命令：
+## Quick start
+
+Clone the repository and start the background service from its root:
+
+```sh
+git clone https://github.com/100days-YongLin/codex-monitor.git
+cd codex-monitor
+python3 scripts/service.py start
+```
+
+Open [http://localhost:8790/](http://localhost:8790/) on the Mac. On the iPad, open `http://<MAC_LAN_IP>:8790/` in Safari, replacing `<MAC_LAN_IP>` with the Mac's local IP address. You can find it in macOS System Settings under the active network connection's details.
+
+In Safari, choose **Share → Add to Home Screen** for a standalone display. Keep the Mac awake and connected. Screen Wake Lock is not guaranteed over local HTTP; adjust the iPad's Auto-Lock setting if you need an always-visible display.
+
+## Controls and task states
+
+Click **CODEX** in the top-left corner to open the controls. **清除已结束** clears finished cards in this browser; **切换全屏** requests fullscreen where supported. A connection dot is green when connected and orange when disconnected. Hover over it to read its status.
+
+| Card | Meaning |
+| --- | --- |
+| Blue | A start event exists, and a local process still holds the thread's writer handle. The timer shows elapsed minutes and seconds. |
+| Green | A completion event was received for this turn. The checkmark means the turn ended, not that its code passed tests. |
+| Orange | The turn was interrupted, or its state cannot be confirmed because no completion event or live writer can be found. |
+| Red | A failure event or failed terminal status was received. |
+
+Running cards appear first. Each thread has one card for its latest turn. Scroll the card area horizontally to see additional tasks. Long titles wrap to at most two lines; hovering over a title reveals its full text on devices with pointer support.
+
+The first scan includes finished tasks from the current day. Observed terminal records are then saved across service restarts in `.runtime/tasks.json`. Clearing cards stores their turn IDs in browser-local storage; a later turn in the same thread can appear again. Devices maintain their own cleared lists.
+
+Completion notifications last eight seconds, can be dismissed with their close button or Escape, and restart their timer when another task completes during the notification. Failed and interrupted turns do not trigger a green notification. Reduced-motion preferences disable the animations.
+
+## Service management
 
 ```sh
 python3 scripts/service.py start
 python3 scripts/service.py stop
 ```
 
-前台调试时先停止后台服务，再运行：
+Starting installs a user LaunchAgent, starts the service, and enables login startup and restart after exit. Starting an already-loaded service restarts it. Stopping unloads the service and removes its login-start configuration.
+
+The repository also includes `启动监控.command` and `停止监控.command` as Finder shortcuts. Keep the checkout at the same path while its LaunchAgent is installed. Stop the service before moving the directory, then start it from the new location.
+
+For foreground operation, stop the background service first:
 
 ```sh
+python3 scripts/service.py stop
 python3 -m monitor.server --host 0.0.0.0 --port 8790
 ```
 
-Mac 必须保持开机、联网。睡眠期间无法同步。通过局域网 HTTP 打开的 Safari 不保证支持保持屏幕常亮；需要长时间展示时，请在 iPad 设置里调整自动锁定时间。
+Foreground options:
 
-## 数据范围和限制
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `--host` | `0.0.0.0` | Listen on all interfaces for LAN access. Set `127.0.0.1` for Mac-only access. |
+| `--port` | `8790` | HTTP listening port. |
+| `--codex-home` | `CODEX_HOME`, or `~/.codex` | Codex directory containing the local database and logs. |
 
-服务只读 `~/.codex/state_5.sqlite` 的聊天元数据及其中指向的 JSONL 日志，使用 `task_started`、`task_complete`、`turn_aborted` 等生命周期事件。`lsof` 用于确认日志写入句柄。轮询间隔约 2 秒。它不会修改 Codex 文件，也不会发起模型请求。
+Service logs and retained task data live in the Git-ignored `.runtime/` directory. The LaunchAgent label is `local.koi.codex-monitor`.
 
-此实现针对当前机器已经验证的本地格式，不是官方对外的任务监控 API。Codex 升级后数据格式可能需要适配。仅监控这台 Mac 上有本地生命周期日志的任务，不覆盖其他 Mac 或纯云端任务。部分旧聊天仅保留数据库历史，没有对应日志，无法从它们恢复执行状态。等待审批等交互状态尚未独立识别。
+## Data access and limitations
 
-HTTP 接口仅返回任务标题、项目目录名、轮次、状态和时间，不返回聊天正文、工具输出或认证文件。服务监听本机所有网卡，同一局域网内可以访问；没有公网发布。运行状态缓存和服务日志位于忽略提交的 `.runtime/`。
+The monitor opens Codex's local metadata database in read-only mode and reads the JSONL files referenced there. It recognizes lifecycle events such as `task_started`, `task_complete`, and `turn_aborted`, and uses `lsof` to check thread writer handles. Snapshots refresh approximately every two seconds. It does not modify Codex files or make model requests.
 
-`/?demo` 是视觉演示模式，使用固定示例任务，不读取实时状态。`/?demo=stress` 展示长标题和长计时；`/?demo=celebrate` 在打开后约 2 秒演示一次完成通知。
+This adapter depends on local Codex implementation details, rather than a public monitoring API. Codex updates may require adapter changes. It only covers tasks with local lifecycle logs on this Mac; other Macs, cloud-only tasks, and old threads whose logs are absent are outside its coverage. Approval and other interactive waiting states are not classified separately.
 
-## 项目结构
+The HTTP API exposes task titles, project directory names, turn IDs, statuses, timestamps, and source diagnostics. It does not return chat bodies, tool output, or authentication files. The default server uses HTTP without authentication and is intended for a trusted LAN; anyone who can reach its listening port can read this metadata.
 
-- `monitor/source.py`：只读数据适配和状态记录。
-- `monitor/server.py`：静态页面及 `/api/status`。
-- `public/`：时钟、卡片、自动重连和横竖屏样式。
-- `scripts/service.py`：macOS 登录启动管理。
-- `tests/test_source.py`：生命周期解析、部分写入、异常结束和重启保留测试。
+## Demos and checks
 
-检查命令：
+| Path | Behavior |
+| --- | --- |
+| `/?demo` | Example tasks without live polling. |
+| `/?demo=stress` | Long Chinese and English titles, long timers, and additional cards. |
+| `/?demo=celebrate` | An example task completes about two seconds after opening, triggering the notification. |
+
+Run the lifecycle tests and optional frontend syntax check:
 
 ```sh
 python3 -m unittest discover -s tests -v
 node --check public/app.js
 ```
+
+The lifecycle suite covers timestamps, interrupted and failed turns, new turns, partial log writes, large records, missing writer handles, and retained completion records after restart.
+
+## Project structure
+
+| Path | Responsibility |
+| --- | --- |
+| `monitor/source.py` | Read-only Codex adapter and retained task records. |
+| `monitor/server.py` | Static files and the `/api/status` endpoint. |
+| `public/` | Clock, cards, responsive styles, notifications, and bundled font. |
+| `scripts/service.py` | macOS LaunchAgent installation and removal. |
+| `tests/test_source.py` | Lifecycle and persistence tests. |
+| `output/` | Interface screenshots. |
+
+## Font attribution
+
+[JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) is bundled under the SIL Open Font License 1.1. Its license is included in [public/fonts/OFL.txt](public/fonts/OFL.txt). This license applies to the bundled font.
