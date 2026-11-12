@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#030b18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Codex Monitor">
+  <title>Codex · Live Monitor</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/fonts/JetBrainsMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <section class="clock-panel" aria-label="时钟">
+      <header class="topbar">
+        <details class="menu">
+          <summary class="brand" aria-label="监控操作">CODEX</summary>
+          <div class="menu-actions"><button id="clear" type="button">清除已结束</button><button id="fullscreen" type="button">切换全屏</button></div>
+        </details>
+        <div class="connection" id="connection" role="status" title="正在连接 Mac"><i></i><span class="sr-only">正在连接 Mac</span></div>
+      </header>
+      <div class="clock-content">
+        <div class="clock" aria-label="当前时间"><span id="clock-hm">00:00</span><span id="clock-s">:00</span></div>
+        <div id="date" class="date"></div>
+      </div>
+    </section>
+    <section class="tasks-panel" aria-label="Codex 任务状态">
+      <div class="tasks-heading">
+        <h1>任务状态</h1>
+        <div id="counts" class="counts"></div>
+      </div>
+      <div class="tasks" id="tasks"><div class="empty"><div class="empty-orbit">◎</div><h2>正在读取任务</h2><p>连接这台 Mac 上的 Codex</p></div></div>
+    </section>
+  </main>
+  <aside id="celebration" class="celebration" hidden aria-live="polite" aria-label="任务完成通知">
+    <div class="celebration-glow" aria-hidden="true"></div>
+    <div class="celebration-panel">
+      <button id="dismiss-celebration" class="dismiss-celebration" type="button" aria-label="关闭完成通知">×</button>
+      <div class="celebration-check" aria-hidden="true">✓</div>
+      <h2 id="celebration-heading">任务完成</h2>
+      <div id="celebration-titles" class="celebration-titles"></div>
+      <div class="celebration-progress" aria-hidden="true"><i></i></div>
+    </div>
+  </aside>
+</body>
+</html>
