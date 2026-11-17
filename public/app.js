@@ -58,6 +58,10 @@ function render() {
   if (nextSignature === signature) return;
   signature = nextSignature;
   const container = $('tasks'); container.replaceChildren();
+  const capacity = Math.min(visible.length, 8);
+  const rows = capacity > 3 ? 2 : 1;
+  container.dataset.rows = String(rows);
+  container.dataset.columns = String(Math.max(1, Math.ceil(capacity / rows)));
   if (!visible.length) {
     const empty = element('div', 'empty');
     empty.append(element('div', 'empty-orbit', '◎'), element('h2', '', '一切就绪，等待下一次开始'), element('p', '', '任务运行后会自动出现在这里'));
@@ -146,6 +150,17 @@ if (demo) {
     tasks[0].startedAt = now - 123456;
     tasks[1].title = 'VeryLongUnbrokenTaskNameToVerifyResponsiveCardLayoutAndTimerVisibility';
     tasks.push({...tasks[2], id:'demo4', title:'多任务横向滚动检查'});
+  }
+  if (new URLSearchParams(location.search).get('demo') === 'grid') {
+    const requested = Number(new URLSearchParams(location.search).get('count') ?? 8);
+    const count = Number.isFinite(requested) ? Math.max(0, Math.min(16, Math.floor(requested))) : 8;
+    const titles = ['构建监控页面', '优化任务同步', '修复登录问题', '整理接口文档',
+      '检查移动端布局', '更新组件样式', '验证数据缓存', '运行集成测试'];
+    tasks = Array.from({length:count}, (_, index) => ({
+      id:`grid-demo-${index}`, turnId:'1', title:titles[index % titles.length], project:'Demo',
+      status:index % 3 === 2 ? 'completed' : 'running',
+      startedAt:now - 197 - index * 63, endedAt:index % 3 === 2 ? now - 30 : null,
+    }));
   }
   receiveTasks(tasks); connection(true); render();
   if (new URLSearchParams(location.search).get('demo') === 'celebrate') {

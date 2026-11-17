@@ -63,7 +63,7 @@ Click **⋯** in the top-left corner to open the controls. **清除已结束** c
 | Orange | The turn was interrupted, or its state cannot be confirmed because no completion event or live writer can be found. |
 | Red | A failure event or failed terminal status was received. |
 
-Running cards appear first. Each thread has one card for its latest turn. Scroll the card area horizontally to see additional tasks. Long titles wrap to at most two lines; hovering over a title reveals its full text on devices with pointer support.
+Running cards appear first. Each thread has one card for its latest turn. Up to eight tasks fit on screen: landscape uses one row for 1-3 tasks, a 2×2 grid for four, 2×3 for 5-6, and 2×4 for 7-8. Portrait uses at most two columns. Scroll the card area horizontally for tasks beyond eight. Titles and timers scale with the available card space. Long titles wrap to at most two lines; hovering over a title reveals its full text on devices with pointer support.
 
 The first scan includes finished tasks from the current day. Observed terminal records are then saved across service restarts in `.runtime/tasks.json`. Clearing cards stores their turn IDs in browser-local storage; a later turn in the same thread can appear again. Devices maintain their own cleared lists.
 
@@ -111,6 +111,7 @@ The HTTP API exposes task titles, project directory names, turn IDs, statuses, t
 | --- | --- |
 | `/?demo` | Example tasks without live polling. |
 | `/?demo=stress` | Long Chinese and English titles, long timers, and additional cards. |
+| `/?demo=grid&count=8` | Eight fictional tasks; change `count` to check layouts with 0-16 tasks. |
 | `/?demo=celebrate` | An example task completes about two seconds after opening, triggering the notification. |
 
 Run the lifecycle tests and optional frontend syntax check:
